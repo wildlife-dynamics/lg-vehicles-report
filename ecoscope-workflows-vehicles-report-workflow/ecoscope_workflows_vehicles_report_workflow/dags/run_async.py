@@ -126,19 +126,14 @@ def main(params: Params):
         "base_map_defs": [],
         "persist_ambo_gpkg": [],
         "persist_hotspot_areas": [],
-        "persist_protected_gpkg": [],
         "load_ambo_group_ranches": ["persist_ambo_gpkg"],
         "load_hotspot_areas": ["persist_hotspot_areas"],
-        "load_protected_areas": ["persist_protected_gpkg"],
         "reproject_ambo_boundaries": ["load_ambo_group_ranches"],
         "reproject_hotspot_areas": ["load_hotspot_areas"],
-        "reproject_protected_areas": ["load_protected_areas"],
         "annotate_ambo_layers": ["reproject_ambo_boundaries"],
         "annotate_hotspot_layers": ["reproject_hotspot_areas"],
-        "annotate_protected_layers": ["reproject_protected_areas"],
         "custom_amboseli_layer": ["annotate_ambo_layers"],
         "custom_hotspot_layer": ["annotate_hotspot_layers"],
-        "custom_protected_layer": ["annotate_protected_layers"],
         "create_hotspot_text_layer": ["reproject_hotspot_areas"],
         "subject_obs": ["er_client_name", "time_range"],
         "subject_reloc": ["subject_obs"],
@@ -161,7 +156,6 @@ def main(params: Params):
         "combined_ldx_speed_layers": [
             "custom_amboseli_layer",
             "custom_hotspot_layer",
-            "custom_protected_layer",
             "create_hotspot_text_layer",
             "generate_speedmap_layers",
         ],
@@ -177,7 +171,6 @@ def main(params: Params):
         "combine_track_layers": [
             "custom_amboseli_layer",
             "custom_hotspot_layer",
-            "custom_protected_layer",
             "create_hotspot_text_layer",
             "generate_track_layers",
         ],
@@ -337,7 +330,7 @@ def main(params: Params):
                     },
                     {
                         "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
-                        "opacity": 0.15,
+                        "opacity": 0.1,
                         "max_zoom": 20,
                     },
                 ],
@@ -391,29 +384,6 @@ def main(params: Params):
             | (params_dict.get("persist_hotspot_areas") or {}),
             method="call",
         ),
-        "persist_protected_gpkg": Node(
-            async_task=fetch_and_persist_file.validate()
-            .set_task_instance_id("persist_protected_gpkg")
-            .handle_errors()
-            .with_tracing()
-            .skipif(
-                conditions=[
-                    any_is_empty_df,
-                    any_dependency_skipped,
-                ],
-                unpack_depth=1,
-            )
-            .set_executor("lithops"),
-            partial={
-                "url": "https://www.dropbox.com/scl/fi/i5yczgyln3zh1n8c4ppl5/lg_protected_areas.gpkg?rlkey=5ea21haq2tmsmx7g502p3qag5&st=zt6ztcku&dl=0",
-                "output_path": os.environ["ECOSCOPE_WORKFLOWS_RESULTS"],
-                "overwrite_existing": False,
-                "retries": 3,
-                "unzip": False,
-            }
-            | (params_dict.get("persist_protected_gpkg") or {}),
-            method="call",
-        ),
         "load_ambo_group_ranches": Node(
             async_task=load_df.validate()
             .set_task_instance_id("load_ambo_group_ranches")
@@ -456,27 +426,6 @@ def main(params: Params):
             | (params_dict.get("load_hotspot_areas") or {}),
             method="call",
         ),
-        "load_protected_areas": Node(
-            async_task=load_df.validate()
-            .set_task_instance_id("load_protected_areas")
-            .handle_errors()
-            .with_tracing()
-            .skipif(
-                conditions=[
-                    any_is_empty_df,
-                    any_dependency_skipped,
-                ],
-                unpack_depth=1,
-            )
-            .set_executor("lithops"),
-            partial={
-                "file_path": DependsOn("persist_protected_gpkg"),
-                "layer": None,
-                "deserialize_json": False,
-            }
-            | (params_dict.get("load_protected_areas") or {}),
-            method="call",
-        ),
         "reproject_ambo_boundaries": Node(
             async_task=reproject_gdf.validate()
             .set_task_instance_id("reproject_ambo_boundaries")
@@ -517,26 +466,6 @@ def main(params: Params):
             | (params_dict.get("reproject_hotspot_areas") or {}),
             method="call",
         ),
-        "reproject_protected_areas": Node(
-            async_task=reproject_gdf.validate()
-            .set_task_instance_id("reproject_protected_areas")
-            .handle_errors()
-            .with_tracing()
-            .skipif(
-                conditions=[
-                    any_is_empty_df,
-                    any_dependency_skipped,
-                ],
-                unpack_depth=1,
-            )
-            .set_executor("lithops"),
-            partial={
-                "gdf": DependsOn("load_protected_areas"),
-                "target_crs": "EPSG:4326",
-            }
-            | (params_dict.get("reproject_protected_areas") or {}),
-            method="call",
-        ),
         "annotate_ambo_layers": Node(
             async_task=get_gdf_geom_type.validate()
             .set_task_instance_id("annotate_ambo_layers")
@@ -575,25 +504,6 @@ def main(params: Params):
             | (params_dict.get("annotate_hotspot_layers") or {}),
             method="call",
         ),
-        "annotate_protected_layers": Node(
-            async_task=get_gdf_geom_type.validate()
-            .set_task_instance_id("annotate_protected_layers")
-            .handle_errors()
-            .with_tracing()
-            .skipif(
-                conditions=[
-                    any_is_empty_df,
-                    any_dependency_skipped,
-                ],
-                unpack_depth=1,
-            )
-            .set_executor("lithops"),
-            partial={
-                "gdf": DependsOn("reproject_protected_areas"),
-            }
-            | (params_dict.get("annotate_protected_layers") or {}),
-            method="call",
-        ),
         "custom_amboseli_layer": Node(
             async_task=create_deckgl_layer_from_gdf.validate()
             .set_task_instance_id("custom_amboseli_layer")
@@ -620,8 +530,8 @@ def main(params: Params):
                         169,
                         169,
                     ],
-                    "get_line_width": 4.5,
-                    "opacity": 0.55,
+                    "get_line_width": 1.25,
+                    "opacity": 0.45,
                     "extruded": False,
                     "stroked": True,
                     "filled": False,
@@ -665,9 +575,9 @@ def main(params: Params):
                         20,
                         60,
                     ],
-                    "get_radius": 2.55,
-                    "get_line_width": 1.95,
-                    "opacity": 0.75,
+                    "get_radius": 2.05,
+                    "get_line_width": 1.25,
+                    "opacity": 0.45,
                     "extruded": False,
                     "stroked": True,
                     "filled": True,
@@ -683,51 +593,6 @@ def main(params: Params):
                 },
             }
             | (params_dict.get("custom_hotspot_layer") or {}),
-            method="call",
-        ),
-        "custom_protected_layer": Node(
-            async_task=create_deckgl_layer_from_gdf.validate()
-            .set_task_instance_id("custom_protected_layer")
-            .handle_errors()
-            .with_tracing()
-            .skipif(
-                conditions=[
-                    any_is_empty_df,
-                    any_dependency_skipped,
-                ],
-                unpack_depth=1,
-            )
-            .set_executor("lithops"),
-            partial={
-                "gdf": DependsOn("annotate_protected_layers"),
-                "style": {
-                    "get_line_color": [
-                        77,
-                        102,
-                        0,
-                    ],
-                    "get_fill_color": [
-                        77,
-                        102,
-                        0,
-                    ],
-                    "get_line_width": 1.95,
-                    "opacity": 0.35,
-                    "extruded": False,
-                    "stroked": True,
-                    "filled": True,
-                },
-                "legend": {
-                    "title": "",
-                    "values": [
-                        {
-                            "label": "National parks and reserves",
-                            "color": "#4d6600",
-                        },
-                    ],
-                },
-            }
-            | (params_dict.get("custom_protected_layer") or {}),
             method="call",
         ),
         "create_hotspot_text_layer": Node(
@@ -880,6 +745,14 @@ def main(params: Params):
             .set_executor("lithops"),
             partial={
                 "relocations": DependsOn("subject_reloc"),
+                "trajectory_segment_filter": {
+                    "min_length_meters": 3,
+                    "max_length_meters": 100000,
+                    "min_time_secs": 1,
+                    "max_time_secs": 21600,
+                    "min_speed_kmhr": 3,
+                    "max_speed_kmhr": 150,
+                },
             }
             | (params_dict.get("subject_traj") or {}),
             method="call",
@@ -1159,7 +1032,7 @@ def main(params: Params):
             partial={
                 "layer_style": {
                     "get_color": "speed_bins_colormap",
-                    "get_width": 1.55,
+                    "get_width": 1.25,
                     "width_scale": 1,
                     "width_min_pixels": 2,
                     "width_max_pixels": 8,
@@ -1167,7 +1040,7 @@ def main(params: Params):
                     "cap_rounded": True,
                     "joint_rounded": True,
                     "billboard": False,
-                    "opacity": 0.55,
+                    "opacity": 0.45,
                     "stroked": True,
                 },
                 "legend": {
@@ -1198,7 +1071,10 @@ def main(params: Params):
                 unpack_depth=1,
             )
             .set_executor("lithops"),
-            partial=(params_dict.get("zoom_to_envelope") or {}),
+            partial={
+                "expansion_factor": 1.05,
+            }
+            | (params_dict.get("zoom_to_envelope") or {}),
             method="mapvalues",
             kwargs={
                 "argnames": ["gdf"],
@@ -1243,7 +1119,7 @@ def main(params: Params):
             )
             .set_executor("lithops"),
             partial={
-                "max_zoom": 20,
+                "max_zoom": 10,
             }
             | (params_dict.get("zoom_speed_gdf_extent") or {}),
             method="mapvalues",
@@ -1269,7 +1145,6 @@ def main(params: Params):
                 "static_layers": [
                     DependsOn("custom_amboseli_layer"),
                     DependsOn("custom_hotspot_layer"),
-                    DependsOn("custom_protected_layer"),
                     DependsOn("create_hotspot_text_layer"),
                 ],
             }
@@ -1413,11 +1288,11 @@ def main(params: Params):
             partial={
                 "layer_style": {
                     "get_color": [
-                        0,
-                        0,
+                        30,
+                        144,
                         255,
                     ],
-                    "get_width": 1.55,
+                    "get_width": 1.25,
                     "width_scale": 1,
                     "width_min_pixels": 2,
                     "width_max_pixels": 8,
@@ -1425,15 +1300,15 @@ def main(params: Params):
                     "cap_rounded": True,
                     "joint_rounded": True,
                     "billboard": False,
-                    "opacity": 0.55,
+                    "opacity": 0.45,
                     "stroked": True,
                 },
                 "legend": {
-                    "title": "Vehicle tracks",
+                    "title": "Vehicle Tracks",
                     "values": [
                         {
                             "label": "Tracks",
-                            "color": "#0000ff",
+                            "color": "#1e90ff",
                         },
                     ],
                 },
@@ -1462,7 +1337,6 @@ def main(params: Params):
                 "static_layers": [
                     DependsOn("custom_amboseli_layer"),
                     DependsOn("custom_hotspot_layer"),
-                    DependsOn("custom_protected_layer"),
                     DependsOn("create_hotspot_text_layer"),
                 ],
             }
@@ -2285,7 +2159,7 @@ def main(params: Params):
                 "config": {
                     "full_page": False,
                     "device_scale_factor": 2.0,
-                    "wait_for_timeout": 10,
+                    "wait_for_timeout": 1,
                     "max_concurrent_pages": 1,
                 },
             }

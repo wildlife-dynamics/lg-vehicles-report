@@ -80,7 +80,7 @@ workflow:
           max_zoom: 20
         - url: >-
             https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}
-          opacity: 0.15
+          opacity: 0.10
           max_zoom: 20
 
   # Download amboseli group ranches and the collared lions templates
@@ -104,15 +104,15 @@ workflow:
       retries: 3
       unzip: false
 
-  - name: Download protected areas gpkg
-    id: persist_protected_gpkg
-    task: fetch_and_persist_file
-    partial:
-      url: https://www.dropbox.com/scl/fi/i5yczgyln3zh1n8c4ppl5/lg_protected_areas.gpkg?rlkey=5ea21haq2tmsmx7g502p3qag5&st=zt6ztcku&dl=0
-      output_path: ${{ env.ECOSCOPE_WORKFLOWS_RESULTS }}
-      overwrite_existing: false
-      retries: 3
-      unzip: false
+  # - name: Download protected areas gpkg
+  #   id: persist_protected_gpkg
+  #   task: fetch_and_persist_file
+  #   partial:
+  #     url: https://www.dropbox.com/scl/fi/i5yczgyln3zh1n8c4ppl5/lg_protected_areas.gpkg?rlkey=5ea21haq2tmsmx7g502p3qag5&st=zt6ztcku&dl=0
+  #     output_path: ${{ env.ECOSCOPE_WORKFLOWS_RESULTS }}
+  #     overwrite_existing: false
+  #     retries: 3
+  #     unzip: false
 
   - name: Load amboseli group ranches
     id: load_ambo_group_ranches
@@ -130,13 +130,13 @@ workflow:
       layer: null
       deserialize_json: false
 
-  - name: Load protected areas
-    id: load_protected_areas
-    task: load_df
-    partial:
-      file_path: ${{ workflow.persist_protected_gpkg.return }}
-      layer: null
-      deserialize_json: false
+  # - name: Load protected areas
+  #   id: load_protected_areas
+  #   task: load_df
+  #   partial:
+  #     file_path: ${{ workflow.persist_protected_gpkg.return }}
+  #     layer: null
+  #     deserialize_json: false
 
   - name: Reproject gdf to 4326 for ambo layers
     id: reproject_ambo_boundaries
@@ -152,12 +152,12 @@ workflow:
       gdf: ${{ workflow.load_hotspot_areas.return }}
       target_crs: "EPSG:4326"
 
-  - name: Reproject gdf to 4326 for protected areas
-    id: reproject_protected_areas
-    task: reproject_gdf
-    partial:
-      gdf: ${{ workflow.load_protected_areas.return }}
-      target_crs: "EPSG:4326"
+  # - name: Reproject gdf to 4326 for protected areas
+  #   id: reproject_protected_areas
+  #   task: reproject_gdf
+  #   partial:
+  #     gdf: ${{ workflow.load_protected_areas.return }}
+  #     target_crs: "EPSG:4326"
 
   - name: Annotate amboseli layers with geom type
     id: annotate_ambo_layers
@@ -171,11 +171,11 @@ workflow:
     partial:
       gdf: ${{ workflow.reproject_hotspot_areas.return }}
 
-  - name: Annotate protected areas with geom type
-    id: annotate_protected_layers
-    task: get_gdf_geom_type
-    partial:
-      gdf: ${{ workflow.reproject_protected_areas.return }}
+  # - name: Annotate protected areas with geom type
+  #   id: annotate_protected_layers
+  #   task: get_gdf_geom_type
+  #   partial:
+  #     gdf: ${{ workflow.reproject_protected_areas.return }}
 
   - name: Create layer for amboseli group ranch
     id: custom_amboseli_layer
@@ -185,8 +185,8 @@ workflow:
       style:
         get_line_color: [169, 169, 169]
         get_fill_color: [169, 169, 169]
-        get_line_width: 4.50
-        opacity: 0.55
+        get_line_width: 1.25
+        opacity: 0.45
         extruded: false
         stroked: true
         filled: false
@@ -204,9 +204,9 @@ workflow:
       style:
         get_line_color: [220, 20, 60]
         get_fill_color: [220, 20, 60]
-        get_radius: 2.55
-        get_line_width: 1.95
-        opacity: 0.75
+        get_radius: 2.05 #2.55
+        get_line_width: 1.25
+        opacity: 0.45
         extruded: false
         stroked: true
         filled: true
@@ -216,24 +216,24 @@ workflow:
           - label: Hotspot areas
             color: "#dc143c"
 
-  - name: Create layer for protected areas
-    id: custom_protected_layer
-    task: create_deckgl_layer_from_gdf
-    partial:
-      gdf: ${{ workflow.annotate_protected_layers.return }}
-      style:
-        get_line_color: [77, 102, 0]
-        get_fill_color: [77, 102, 0]
-        get_line_width: 1.95
-        opacity: 0.35
-        extruded: false
-        stroked: true
-        filled: true
-      legend:
-        title: ""
-        values:
-          - label: National parks and reserves
-            color: "#4d6600"
+  # - name: Create layer for protected areas
+  #   id: custom_protected_layer
+  #   task: create_deckgl_layer_from_gdf
+  #   partial:
+  #     gdf: ${{ workflow.annotate_protected_layers.return }}
+  #     style:
+  #       get_line_color: [77, 102, 0]
+  #       get_fill_color: [77, 102, 0]
+  #       get_line_width: 1.95
+  #       opacity: 0.35
+  #       extruded: false
+  #       stroked: true
+  #       filled: true
+  #     legend:
+  #       title: ""
+  #       values:
+  #         - label: National parks and reserves
+  #           color: "#4d6600"
 
   - name: Create text layer for conflict hotspots
     id: create_hotspot_text_layer
@@ -312,7 +312,14 @@ workflow:
     task: relocations_to_trajectory
     partial:
       relocations: ${{ workflow.subject_reloc.return }}
-
+      trajectory_segment_filter:
+        min_length_meters: 3 
+        max_length_meters: 100000
+        min_time_secs: 1
+        max_time_secs: 21600
+        min_speed_kmhr: 3
+        max_speed_kmhr: 150
+        
   - name: Persist trajectories
     id: persist_trajs
     task: persist_df
@@ -444,7 +451,7 @@ workflow:
     partial:
       layer_style:
         get_color: speed_bins_colormap
-        get_width: 1.55
+        get_width: 1.25
         width_scale: 1
         width_min_pixels: 2
         width_max_pixels: 8
@@ -452,7 +459,7 @@ workflow:
         cap_rounded: true
         joint_rounded: true
         billboard: false
-        opacity: 0.55
+        opacity: 0.45
         stroked: true
       legend:
         title: Speed (km/h)
@@ -468,6 +475,8 @@ workflow:
   - name: zoom to envelope
     id: zoom_to_envelope
     task: envelope_gdf
+    partial: 
+      expansion_factor: 1.05
     mapvalues:
       argnames: gdf
       argvalues: ${{ workflow.filter_speed_cols.return }}
@@ -487,7 +496,7 @@ workflow:
     id: zoom_speed_gdf_extent
     task: custom_view_state_from_gdf
     partial:
-      max_zoom: 20
+      max_zoom: 10
     mapvalues:
       argnames: gdf
       argvalues: ${{ workflow.zoom_to_envelope.return }}
@@ -499,7 +508,7 @@ workflow:
       static_layers:
         - ${{ workflow.custom_amboseli_layer.return }}
         - ${{ workflow.custom_hotspot_layer.return }}
-        - ${{ workflow.custom_protected_layer.return }}
+        # - ${{ workflow.custom_protected_layer.return }}
         - ${{ workflow.create_hotspot_text_layer.return }}
     mapvalues:
       argnames: grouped_layers
@@ -562,8 +571,8 @@ workflow:
     task: create_path_layer
     partial:
       layer_style:
-        get_color: [0, 0, 255]
-        get_width: 1.55
+        get_color: [30, 144, 255]
+        get_width: 1.25
         width_scale: 1
         width_min_pixels: 2
         width_max_pixels: 8
@@ -571,13 +580,13 @@ workflow:
         cap_rounded: true
         joint_rounded: true
         billboard: false
-        opacity: 0.55
+        opacity: 0.45
         stroked: true
       legend:
-        title: Vehicle tracks
+        title: Vehicle Tracks
         values:
           - label: Tracks
-            color: "#0000ff"
+            color: "#1e90ff"
     mapvalues:
       argnames: geodataframe
       argvalues: ${{ workflow.split_subject_traj_groups.return }}
@@ -590,7 +599,7 @@ workflow:
       static_layers:
         - ${{ workflow.custom_amboseli_layer.return }}
         - ${{ workflow.custom_hotspot_layer.return }}
-        - ${{ workflow.custom_protected_layer.return }}
+        # - ${{ workflow.custom_protected_layer.return }}
         - ${{ workflow.create_hotspot_text_layer.return }}
     mapvalues:
       argnames: grouped_layers
@@ -983,7 +992,7 @@ workflow:
       config:
         full_page: false
         device_scale_factor: 2.0
-        wait_for_timeout: 10
+        wait_for_timeout: 1
         max_concurrent_pages: 1
     mapvalues:
       argnames: html_path
