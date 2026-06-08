@@ -64,7 +64,7 @@ workflow:
         - index_name: subject_name
 
   #connect to ER
-  - name: Data Source
+  - name: Connect to EarthRanger
     id: er_client_name
     task: set_er_connection
 

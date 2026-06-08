@@ -176,19 +176,18 @@ def build():
         ),
 
         sp(6), h2("2.3 Static Geodata Files"),
-        p("Three boundary datasets are downloaded from Dropbox and cached locally:"),
+        p("Two boundary datasets are downloaded from Dropbox and cached locally:"),
         make_table(
             [
                 [c("Dataset"),               c("File"),                          c("Purpose")],
                 [c("Group Ranch Boundaries"), c("lg_group_ranch_boundaries.gpkg"), c("Community ranch polygons in Amboseli")],
                 [c("Conflict Hotspot Areas"), c("lg_conflict_hotspots.gpkg"),      c("Known human–lion conflict hotspot features")],
-                [c("Protected Areas"),        c("lg_protected_areas.gpkg"),        c("National parks and reserves")],
             ],
             [4*cm, 5*cm, 7.5*cm],
         ),
         sp(4),
         p(
-            "All three files use <code>overwrite_existing: false</code> (3 retries). "
+            "Both files use <code>overwrite_existing: false</code> (3 retries). "
             "After loading, each is reprojected to <b>EPSG:4326</b> and annotated with "
             "its geometry type before layer creation."
         ),
@@ -210,14 +209,14 @@ def build():
             [
                 [c("Layer"),                  c("Opacity"), c("Max zoom")],
                 [c("ArcGIS World Hillshade"),  c("100 %"),   c("20")],
-                [c("ArcGIS World Street Map"), c("15 %"),    c("20")],
+                [c("ArcGIS World Street Map"), c("10 %"),    c("20")],
             ],
             [10*cm, 2.5*cm, 4*cm],
         ),
         sp(4),
         p(
             "The hillshade provides full-opacity terrain context. "
-            "The street map is overlaid at 15 % to show roads and settlement names "
+            "The street map is overlaid at 10 % to show roads and settlement names "
             "without obscuring the vehicle data layers."
         ),
     ]
@@ -293,7 +292,7 @@ def build():
     story += [
         sp(4), h1("4. Static Map Layers"), hr(),
         p(
-            "Four static layers are built once and composited onto every vehicle-level "
+            "Three static layers are built once and composited onto every vehicle-level "
             "map to provide spatial context."
         ),
 
@@ -301,12 +300,10 @@ def build():
         make_table(
             [
                 [c("Layer"),               c("Colour (RGB)"),             c("Opacity"), c("Filled"), c("Notes")],
-                [c("Group Ranch Boundaries"), c("(169, 169, 169) grey"),   c("55 %"),    c("No"),
-                 c("Outline only, line width 4.5")],
-                [c("Conflict Hotspots"),   c("(220, 20, 60) crimson"),    c("75 %"),    c("Yes"),
-                 c("Point radius 2.55, line width 1.95")],
-                [c("Protected Areas"),     c("(77, 102, 0) dark green"),  c("35 %"),    c("Yes"),
-                 c("Line width 1.95")],
+                [c("Group Ranch Boundaries"), c("(169, 169, 169) grey"),   c("45 %"),    c("No"),
+                 c("Outline only, line width 1.25")],
+                [c("Conflict Hotspots"),   c("(220, 20, 60) crimson"),    c("45 %"),    c("Yes"),
+                 c("Point radius 2.05, line width 1.25")],
                 [c("Hotspot Text Labels"), c("(20, 20, 20) near-black"),  c("—"),       c("—"),
                  c("Arial, 1 000 m base, 40–75 px clamp, centroid-anchored")],
             ],
@@ -345,9 +342,9 @@ def build():
         ),
         p(
             "<code>create_path_layer</code> renders the filtered GeoDataFrame with "
-            "width 1.55 px (min 2 px, max 8 px, screen-space), rounded caps and joins, "
-            "55 % opacity. Legend title: <i>Speed (km/h)</i>. The layer is combined with "
-            "the four static boundary layers. The map is auto-zoomed to the trajectory "
+            "width 1.25 px (min 2 px, max 8 px, screen-space), rounded caps and joins, "
+            "45 % opacity. Legend title: <i>Speed (km/h)</i>. The layer is combined with "
+            "the three static boundary layers. The map is auto-zoomed to the trajectory "
             "extent and persisted as HTML (suffix: <code>speedmap</code>), then "
             "converted to PNG at 2× scale with a 40 s tile-load wait."
         ),
@@ -360,17 +357,17 @@ def build():
         make_table(
             [
                 [c("Property"),     c("Value")],
-                [c("Colour"),       c("RGB(0, 0, 255) — blue")],
-                [c("Width"),        c("1.55 px, min 2 px, max 8 px (screen-space)")],
+                [c("Colour"),       c("RGB(30, 144, 255) — dodger blue")],
+                [c("Width"),        c("1.25 px, min 2 px, max 8 px (screen-space)")],
                 [c("Cap / Join"),   c("Rounded")],
-                [c("Opacity"),      c("55 %")],
+                [c("Opacity"),      c("45 %")],
                 [c("Max zoom"),     c("15 (draw_map setting)")],
             ],
             [4.5*cm, 12*cm],
         ),
         sp(4),
         p(
-            "The path layer is combined with the four static layers. The view state is "
+            "The path layer is combined with the three static layers. The view state is "
             "shared with the Speed Map (same envelope and zoom). The map is persisted "
             "as HTML (suffix: <code>tracks</code>) and converted to PNG at 2× scale "
             "with a 40 s tile-load wait."
@@ -552,8 +549,8 @@ def build():
             [
                 [c("Stage"),              c("Tasks")],
                 [c("Setup"),              c("ER connection, time range, grouper (subject_name), base maps")],
-                [c("Geodata download"),   c("3 boundary files + 2 Word templates from Dropbox")],
-                [c("Static layers"),      c("Ranch, hotspot, protected area, hotspot text layers")],
+                [c("Geodata download"),   c("2 boundary files + 2 Word templates from Dropbox")],
+                [c("Static layers"),      c("Ranch, hotspot, hotspot text layers")],
                 [c("Telemetry ingest"),   c("Observations → relocations → trajectories → temporal index → speed bins → rename → split")],
                 [c("Speed Map branch"),   c("Sort → 6-colour palette → format labels → filter cols → path layer → compose → zoom → HTML → PNG → widget")],
                 [c("Tracks branch"),      c("Blue path layer → compose → draw map (zoom 15) → HTML → PNG → widget")],

@@ -25,7 +25,7 @@ Before running the workflow, ensure you have:
 - Access to an **EarthRanger** instance with a configured data source
 - The **Vehicles** subject group present in your EarthRanger instance
 
-> The three spatial boundary files (group ranch boundaries, conflict hotspot areas, and protected areas) and both Word report templates are downloaded automatically from Dropbox — no local copies are required.
+> The two spatial boundary files (group ranch boundaries and conflict hotspot areas) and both Word report templates are downloaded automatically from Dropbox — no local copies are required.
 
 ---
 
@@ -94,13 +94,13 @@ All vehicle tracks and metrics are computed within this window.
 
 ---
 
-### Step 5 — Data Source, Transform Relocations to Trajectories, and Zoom to Envelope
+### Step 5 — Connect to EarthRanger, Transform Relocations to Trajectories, and Zoom to Envelope
 
 Scroll down to configure the remaining three sections.
 
-**Data Source**
+**Connect to EarthRanger**
 
-Select the EarthRanger connection configured in Step 2 from the **Data Source** dropdown. The workflow will fetch all observations for the **Vehicles** subject group from this instance.
+Select the EarthRanger connection configured in Step 2 from the **Connect to EarthRanger** dropdown. The workflow will fetch all observations for the **Vehicles** subject group from this instance.
 
 **Transform relocations to trajectories** *(Advanced Configurations)*
 
@@ -108,12 +108,12 @@ These parameters control how raw GPS fixes are converted into trajectory segment
 
 | Field | Default | Description |
 |-------|---------|-------------|
-| Minimum Segment Length (m) | `0.001` | Discard segments shorter than this distance |
+| Minimum Segment Length (m) | `3` | Discard segments shorter than this distance |
 | Maximum Segment Length (m) | `100000` | Discard segments longer than this distance |
 | Minimum Segment Duration (s) | `1` | Discard segments shorter than this duration |
-| Maximum Segment Duration (s) | `172800` | Discard segments longer than this duration (48 hours) |
-| Minimum Segment Speed (km/h) | `0.01` | Discard segments below this average speed |
-| Maximum Segment Speed (km/h) | `500` | Discard segments above this average speed |
+| Maximum Segment Duration (s) | `21600` | Discard segments longer than this duration (6 hours) |
+| Minimum Segment Speed (km/h) | `3` | Discard segments below this average speed |
+| Maximum Segment Speed (km/h) | `150` | Discard segments above this average speed |
 
 **Zoom to envelope**
 
@@ -130,7 +130,7 @@ These parameters control how raw GPS fixes are converted into trajectory segment
 Once all parameters are configured, click **Submit**. The runner will:
 
 1. Pull vehicle GPS observations from EarthRanger for the specified time range.
-2. Download the static boundary files (group ranches, conflict hotspots, protected areas).
+2. Download the static boundary files (group ranches, conflict hotspots).
 3. Convert observations to relocations, then build trajectory segments with speed and distance metrics.
 4. Classify speed into 6 equal-interval bins and generate the Speed Map.
 5. Render the Vehicle Tracks map using a uniform blue path layer.
