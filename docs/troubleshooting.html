@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Troubleshooting — LG Vehicles Report Workflow</title>
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="bar">
+      <a class="brand" href="index.html">LG Vehicles Report</a>
+      <nav>
+        <a href="index.html">Overview</a>
+        <a href="user-guide.html">User Guide</a>
+        <a href="technical-guide.html">Technical Guide</a>
+        <a href="troubleshooting.html" class="active">Troubleshooting</a>
+        <a href="https://github.com/wildlife-dynamics/lg-vehicles-report">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <h1>Troubleshooting</h1>
+    <p class="lede">Common issues encountered while configuring, running, or contributing to the LG Vehicles Report Workflow, and how to resolve them. If your issue isn't listed here, open an issue on <a href="https://github.com/wildlife-dynamics/lg-vehicles-report/issues">GitHub</a>.</p>
+
+    <h2>Configuration &amp; Connections</h2>
+
+    <div class="error-block">
+      <p class="symptom">No data / everything skipped</p>
+      <p>This workflow only reads from the EarthRanger subject group <strong>Vehicles</strong> &mdash; this name is hardcoded in <code>spec.yaml</code> and is not a configurable field anywhere in the workflow form. If your instance's vehicles are registered under a different subject group name, this workflow won't find them.</p>
+    </div>
+
+    <div class="error-block">
+      <p class="symptom">EarthRanger connection fails or times out</p>
+      <p>Verify the server URL, username, and password configured in the <a href="user-guide.html#connection">Data Source Connection</a>. Confirm you can log into that same EarthRanger instance directly in a browser with the same credentials. Credentials aren't validated at setup time, so an invalid password only surfaces once the workflow actually runs.</p>
+    </div>
+
+    <div class="error-block">
+      <p class="symptom">Study area layers (Conservancies / Group Ranch Boundaries) are missing from the maps</p>
+      <p>These layers are <strong>not</strong> downloaded from Dropbox &mdash; they're fetched live from your connected EarthRanger instance as spatial features of type <code>Conservancies</code> and <code>Group Ranch Boundaries</code>. If your EarthRanger instance doesn't have spatial features registered under those exact names, both layers will simply be absent from every map, with no separate error.</p>
+    </div>
+
+    <div class="error-block">
+      <p class="symptom">Basemap tiles don't load, or the background map is blank</p>
+      <p>The <a href="user-guide.html#basemap">Basemap Layers</a> URLs are user-editable. If you changed either the ESRI World Hillshade or World Street Map layer away from its default, confirm the new tile URL follows the standard <code>{z}/{y}/{x}</code> template and is reachable from the machine running the workflow.</p>
+    </div>
+
+    <h2>Trajectories &amp; Map Outputs</h2>
+
+    <div class="error-block">
+      <p class="symptom">Speed Map or Vehicle Tracks map is empty or sparse for a vehicle</p>
+      <p>This is usually the <a href="user-guide.html#trajectory-filter">Trajectory Filter</a> discarding most of the vehicle's data. Vehicles can travel much faster than wildlife, so if a vehicle's typical speed falls outside the default 3&ndash;150 km/h bounds, or its fix intervals fall outside the 1 s&ndash;6 h duration bounds, loosen the thresholds to match, then re-run.</p>
+    </div>
+
+    <div class="error-block">
+      <p class="symptom">Map is zoomed too tight or too loose around the tracks</p>
+      <p>Adjust the <a href="user-guide.html#zoom-envelope">Zoom to Envelope</a> Expansion Factor &mdash; <code>1.0</code> is a tight fit to the data extent; increase it (e.g. <code>1.2</code>) to add padding around the map. Both the Speed Map and Vehicle Tracks map share the same computed view state.</p>
+    </div>
+
+    <div class="error-block">
+      <p class="symptom">Speed Over Time chart is missing a vehicle, or shows a flat/empty line</p>
+      <p>Each vehicle gets its own chart, generated only from that vehicle's own trajectory segments. A vehicle with very few fixes in the analysis window (or whose segments were all discarded by the <a href="user-guide.html#trajectory-filter">Trajectory Filter</a>) will produce a sparse or empty chart rather than an error.</p>
+    </div>
+
+    <div class="error-block">
+      <p class="symptom">No outputs written / can't find results</p>
+      <p>All outputs are written to the directory specified by the <code>ECOSCOPE_WORKFLOWS_RESULTS</code> environment variable. Confirm it's set and points to a directory the workflow process can write to.</p>
+    </div>
+
+    <h2>Contributing &amp; CI</h2>
+    <p>These apply if you're modifying the workflow itself (<code>spec.yaml</code>, <code>test-cases.yaml</code>, or the generated <code>ecoscope-workflows-vehicles-report-workflow/</code> directory) and opening a pull request.</p>
+
+    <div class="error-block">
+      <p class="symptom"><code>Generated files differ from committed files in ecoscope-workflows-vehicles-report-workflow</code></p>
+      <p>The generated workflow directory is out of sync with <code>spec.yaml</code>. Run the recompile script locally and commit the result:</p>
+      <pre><code>pixi run --manifest-path pixi.toml --locked bash -c "./dev/recompile.sh --update"</code></pre>
+    </div>
+
+    <div class="error-block">
+      <p class="symptom"><code>Found wildcard version (*) in requirements</code> or <code>Found local file channel (file://) in requirements</code></p>
+      <p>In <code>spec.yaml</code>, every dependency under <code>requirements</code> must pin an exact version and use a remote conda channel &mdash; wildcard versions and local <code>file://</code> channels are only valid for local development, not for CI using published packages.</p>
+    </div>
+
+    <div class="error-block">
+      <p class="symptom"><code>VERSION.yaml (...) must be greater than main branch (...)</code></p>
+      <p>Bump <code>MAJ</code>/<code>MIN</code>/<code>PATCH</code> in <code>ecoscope-workflows-vehicles-report-workflow/VERSION.yaml</code> so it's strictly greater than the version on <code>main</code> before opening or updating a PR.</p>
+    </div>
+
+    <div class="error-block">
+      <p class="symptom"><code>test-cases.yaml must contain at least one test case</code></p>
+      <p>Every workflow requires at least one top-level entry in <code>test-cases.yaml</code> with a <code>params</code> block. See the existing entries in that file for the expected format.</p>
+    </div>
+
+    <div class="error-block">
+      <p class="symptom">Workflow tests fail in CI but pass locally (or vice versa)</p>
+      <p><code>test.yml</code> runs test cases against all of <code>ubuntu-latest</code>, <code>macos-latest</code>, and <code>windows-latest</code>. If a test only fails on CI, check whether it depends on EarthRanger credentials being available as secrets, on the Conservancies/Group Ranch Boundaries spatial features existing on the test EarthRanger instance, or on OS-specific path handling.</p>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>LG Vehicles Report Workflow &middot; <a href="https://github.com/wildlife-dynamics/lg-vehicles-report">wildlife-dynamics/lg-vehicles-report</a> on GitHub</p>
+  </footer>
+</body>
+</html>

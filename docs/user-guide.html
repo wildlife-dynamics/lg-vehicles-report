@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Guide — LG Vehicles Report Workflow</title>
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="bar">
+      <a class="brand" href="index.html">LG Vehicles Report</a>
+      <nav>
+        <a href="index.html">Overview</a>
+        <a href="user-guide.html" class="active">User Guide</a>
+        <a href="technical-guide.html">Technical Guide</a>
+        <a href="troubleshooting.html">Troubleshooting</a>
+        <a href="https://github.com/wildlife-dynamics/lg-vehicles-report">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <h1>LG Vehicles Report Workflow &mdash; User Guide</h1>
+    <p class="lede">This guide walks you through loading, configuring, and running the LG Vehicles Report Workflow, which generates a vehicle movement analysis report for Lion Guardians in the Amboseli ecosystem sourced from EarthRanger.</p>
+
+    <h2>What it produces</h2>
+    <ul>
+      <li>A <strong>Speed Map</strong> &mdash; trajectory segments coloured by a 6-class speed palette (green &rarr; red)</li>
+      <li>A <strong>Vehicle Tracks Map</strong> &mdash; uniform blue path overlay on the study area layers</li>
+      <li>A <strong>Speed Over Time line chart</strong> &mdash; speed (km/h) plotted against date per vehicle</li>
+      <li><strong>Scalar metric widgets</strong> &mdash; Mean Speed, Min Speed, Max Speed, Distance covered</li>
+      <li>A <strong>per-vehicle summary CSV</strong> &mdash; speed and distance statistics (one row per vehicle)</li>
+      <li>A <strong>Word document report</strong> (<code>.docx</code>) &mdash; cover page plus one section per vehicle</li>
+      <li>An <strong>interactive widget dashboard</strong></li>
+    </ul>
+
+    <h2>Requirements</h2>
+    <ul>
+      <li>Access to an <strong>EarthRanger</strong> instance with a configured data source</li>
+      <li>The <strong>Vehicles</strong> subject group present in your EarthRanger instance</li>
+      <li>The <strong>Conservancies</strong> and <strong>Group Ranch Boundaries</strong> spatial features must exist in that EarthRanger instance &mdash; these are fetched live to build the study-area map layers</li>
+    </ul>
+    <p>Both Word report templates and the organisation logo are downloaded automatically from Dropbox &mdash; no local copies are required.</p>
+
+    <h2 id="load">1. Load the Workflow</h2>
+    <p>In the workflow runner, go to <strong>Workflow Templates</strong> and click <strong>Add Workflow Template</strong>. Paste this repository's URL into the <strong>Github Link</strong> field, then click <strong>Add Template</strong>:</p>
+    <pre><code>https://github.com/wildlife-dynamics/lg-vehicles-report.git</code></pre>
+    <p>Once added, it appears in the <strong>Workflow Templates</strong> list as <strong>lg-vehicles-report</strong>. Click it to open the workflow configuration form.</p>
+    <p>The card may show <strong>Initializing&hellip;</strong> briefly while the environment is set up.</p>
+
+    <h2 id="configure">2. Configure the Workflow</h2>
+
+    <h3 id="connection">Data Source Connection</h3>
+    <p>Navigate to <strong>Data Sources</strong> and add a new EarthRanger connection. Fill in:</p>
+    <ul>
+      <li><strong>Data Source Name</strong> &mdash; a label to identify this connection</li>
+      <li><strong>EarthRanger URL</strong> &mdash; your instance URL (e.g. <code>your-site.pamdas.org</code>)</li>
+      <li><strong>EarthRanger Username</strong> and <strong>EarthRanger Password</strong></li>
+    </ul>
+    <p>Credentials are not validated at setup time. Any authentication errors will appear when the workflow runs.</p>
+
+    <h3 id="workflow-details">Workflow Details</h3>
+    <table>
+      <thead><tr><th>Field</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>Workflow Name</td><td>A short name to identify this run</td></tr>
+        <tr><td>Workflow Description</td><td>Optional notes about the run (e.g. date range or vehicle group)</td></tr>
+      </tbody>
+    </table>
+
+    <h3 id="time-range">Time Range</h3>
+    <table>
+      <thead><tr><th>Field</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>Timezone</td><td>Select the local timezone (e.g. <code>Africa/Nairobi UTC+03:00</code>)</td></tr>
+        <tr><td>Since</td><td>Start date and time of the analysis period</td></tr>
+        <tr><td>Until</td><td>End date and time of the analysis period</td></tr>
+      </tbody>
+    </table>
+    <p>All vehicle tracks and metrics are computed within this window.</p>
+
+    <h3 id="basemap">Basemap Layers</h3>
+    <p>Two stacked ArcGIS tile layers form the background of every map. Pre-filled with sensible defaults, but the URL, opacity, and max zoom of each layer are editable.</p>
+    <table>
+      <thead><tr><th>Layer</th><th>Default Opacity</th><th>Max Zoom</th></tr></thead>
+      <tbody>
+        <tr><td>ESRI World Hillshade</td><td><code>1.0</code></td><td><code>15</code></td></tr>
+        <tr><td>ESRI World Street Map</td><td><code>0.15</code></td><td><code>15</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3 id="er-connection">Connect to EarthRanger</h3>
+    <p>Select the EarthRanger connection configured above from the <strong>Connect to EarthRanger</strong> dropdown. The workflow will fetch all observations for the <strong>Vehicles</strong> subject group from this instance.</p>
+
+    <h3 id="trajectory-filter">Trajectory Filter</h3>
+    <p>Expand <strong>Advanced Configurations</strong> under <strong>Transform relocations to trajectories</strong> to adjust the segment filters. These parameters control how raw GPS fixes are converted into trajectory segments.</p>
+    <table>
+      <thead><tr><th>Field</th><th>Default</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>Minimum Segment Length (m)</td><td><code>3</code></td><td>Discard segments shorter than this distance</td></tr>
+        <tr><td>Maximum Segment Length (m)</td><td><code>100000</code></td><td>Discard segments longer than this distance</td></tr>
+        <tr><td>Minimum Segment Duration (s)</td><td><code>1</code></td><td>Discard segments shorter than this duration</td></tr>
+        <tr><td>Maximum Segment Duration (s)</td><td><code>21600</code></td><td>Discard segments longer than this duration (6 hours)</td></tr>
+        <tr><td>Minimum Segment Speed (km/h)</td><td><code>3</code></td><td>Discard segments below this average speed</td></tr>
+        <tr><td>Maximum Segment Speed (km/h)</td><td><code>150</code></td><td>Discard segments above this average speed</td></tr>
+      </tbody>
+    </table>
+
+    <h3 id="zoom-envelope">Zoom to Envelope</h3>
+    <table>
+      <thead><tr><th>Field</th><th>Default</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>Expansion Factor</td><td><code>1.05</code></td><td>Factor to expand the bounding box when auto-zooming maps (e.g. <code>1.2</code> = 20% larger)</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="run">3. Run the Workflow</h2>
+    <p>Once all parameters are configured, click <strong>Submit</strong>. The runner will:</p>
+    <ol>
+      <li>Pull vehicle GPS observations from EarthRanger for the specified time range.</li>
+      <li>Fetch the Conservancies and Group Ranch Boundaries spatial features from EarthRanger to build the study-area map layers.</li>
+      <li>Convert observations to relocations, then build trajectory segments with speed and distance metrics.</li>
+      <li>Classify speed into 6 equal-interval bins and generate the Speed Map.</li>
+      <li>Render the Vehicle Tracks map using a uniform blue path layer.</li>
+      <li>Draw the speed-over-time line chart per vehicle.</li>
+      <li>Compute per-vehicle summary statistics (mean, min, max speed; total distance).</li>
+      <li>Assemble the Word report (cover page + per-vehicle sections) and the dashboard.</li>
+      <li>Save all outputs to the directory specified by <code>ECOSCOPE_WORKFLOWS_RESULTS</code>.</li>
+    </ol>
+
+    <h3 id="output-files">Output Files</h3>
+    <p>All outputs are written to <code>$ECOSCOPE_WORKFLOWS_RESULTS/</code>:</p>
+    <table>
+      <thead><tr><th>File</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>vehicle_relocations.geoparquet</code></td><td>Cleaned GPS fix locations</td></tr>
+        <tr><td><code>vehicle_trajectories.geoparquet</code></td><td>Trajectory segments with speed and distance</td></tr>
+        <tr><td><code>&lt;vehicle&gt;_speedmap.html</code></td><td>Interactive speed map per vehicle</td></tr>
+        <tr><td><code>&lt;vehicle&gt;_tracks.html</code></td><td>Interactive tracks map per vehicle</td></tr>
+        <tr><td><code>&lt;vehicle&gt;_speed_line_chart.html</code></td><td>Interactive speed-over-time line chart</td></tr>
+        <tr><td><code>&lt;vehicle&gt;_speedmap.png</code></td><td>Screenshot of speed map (2&times; resolution)</td></tr>
+        <tr><td><code>&lt;vehicle&gt;_tracks.png</code></td><td>Screenshot of tracks map (2&times; resolution)</td></tr>
+        <tr><td><code>&lt;vehicle&gt;_speed_line_chart.png</code></td><td>Screenshot of speed line chart (2&times; resolution)</td></tr>
+        <tr><td><code>&lt;vehicle&gt;_summary.csv</code></td><td>Speed and distance summary table (one row per vehicle)</td></tr>
+        <tr><td><code>cover_page.docx</code></td><td>Rendered report cover page</td></tr>
+        <tr><td><code>&lt;vehicle&gt;.docx</code></td><td>Per-vehicle report section</td></tr>
+        <tr><td><code>overall_report.docx</code></td><td>Final combined Word report</td></tr>
+      </tbody>
+    </table>
+
+    <p>Something not working as expected? See <a href="troubleshooting.html">Troubleshooting</a>. For a deeper look at the pipeline internals, see the <a href="technical-guide.html">Technical Guide</a>.</p>
+  </main>
+
+  <footer class="site-footer">
+    <p>LG Vehicles Report Workflow &middot; <a href="https://github.com/wildlife-dynamics/lg-vehicles-report">wildlife-dynamics/lg-vehicles-report</a> on GitHub</p>
+  </footer>
+</body>
+</html>

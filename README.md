@@ -1,86 +1,63 @@
-# LG Vehicles Report Workflow — User Guide
+# LG Vehicles Report Workflow
 
-This guide walks you through configuring and running the LG Vehicles Report Workflow, which generates a vehicle movement analysis report for Lion Guardians in the Amboseli ecosystem sourced from EarthRanger.
+Generates a vehicle movement analysis report for Lion Guardians in the Amboseli ecosystem, sourced from EarthRanger.
 
----
-
-## Overview
+## What it produces
 
 The workflow produces, for each tracked vehicle:
 
-- A **Speed Map** — trajectory segments coloured by a 6-class speed palette (green → red)
-- A **Vehicle Tracks Map** — uniform blue path overlay on boundary layers
-- A **Speed Over Time line chart** — speed (km/h) plotted against date per vehicle
-- **Scalar metric widgets** — Mean Speed, Min Speed, Max Speed, Distance covered
-- A **per-vehicle summary CSV** — speed and distance statistics with a totals row
-- A **Word document report** (`.docx`) — cover page plus one section per vehicle
+- A **Speed Map** &mdash; trajectory segments coloured by a 6-class speed palette (green &rarr; red)
+- A **Vehicle Tracks Map** &mdash; uniform blue path overlay on the study area layers
+- A **Speed Over Time line chart** &mdash; speed (km/h) plotted against date per vehicle
+- **Scalar metric widgets** &mdash; Mean Speed, Min Speed, Max Speed, Distance covered
+- A **per-vehicle summary CSV** &mdash; speed and distance statistics (one row per vehicle)
+- A **Word document report** (`.docx`) &mdash; cover page plus one section per vehicle
 - An **interactive widget dashboard**
 
----
-
-## Prerequisites
-
-Before running the workflow, ensure you have:
+## Requirements
 
 - Access to an **EarthRanger** instance with a configured data source
 - The **Vehicles** subject group present in your EarthRanger instance
+- The **Conservancies** and **Group Ranch Boundaries** spatial features must exist in that EarthRanger instance &mdash; these are fetched live to build the study-area map layers
 
-> The two spatial boundary files (group ranch boundaries and conflict hotspot areas) and both Word report templates are downloaded automatically from Dropbox — no local copies are required.
+> Both Word report templates and the organisation logo are downloaded automatically from Dropbox &mdash; no local copies are required.
 
 ---
 
-## Step-by-Step Configuration
+## 1. Load the Workflow
 
-### Step 1 — Add the Workflow Template
-
-In the workflow runner, go to **Workflow Templates** and click **Add Workflow Template**. Paste the GitHub repository URL into the **Github Link** field:
+In the workflow runner, go to **Workflow Templates** and click **Add Workflow Template**. Paste this repository's URL into the **Github Link** field, then click **Add Template**:
 
 ```
 https://github.com/wildlife-dynamics/lg-vehicles-report.git
 ```
 
-Then click **Add Template**.
+Once added, it appears in the **Workflow Templates** list as **lg-vehicles-report**. Click it to open the workflow configuration form.
 
-![Add Workflow Template](data/screenshots/add_workflow.png)
+> The card may show **Initializing…** briefly while the environment is set up.
 
 ---
 
-### Step 2 — Add an EarthRanger Connection
+## 2. Configure the Workflow
+
+### Data Source Connection
 
 Navigate to **Data Sources** and add a new EarthRanger connection. Fill in:
 
-- **Data Source Name** — a label to identify this connection
-- **EarthRanger URL** — your instance URL (e.g. `your-site.pamdas.org`)
+- **Data Source Name** &mdash; a label to identify this connection
+- **EarthRanger URL** &mdash; your instance URL (e.g. `your-site.pamdas.org`)
 - **EarthRanger Username** and **EarthRanger Password**
 
 > Credentials are not validated at setup time. Any authentication errors will appear when the workflow runs.
 
-![EarthRanger Connection](data/screenshots/er_connection.png)
-
----
-
-### Step 3 — Select the Workflow
-
-After the template is added, it appears in the **Workflow Templates** list as **lg-vehicles-report**. Click it to open the workflow configuration form.
-
-> The card may show **Initializing…** briefly while the environment is set up.
-
-![Select Workflow Template](data/screenshots/select_workflow.png)
-
----
-
-### Step 4 — Set Workflow Details and Define Time Range
-
-The configuration form opens with two sections at the top.
-
-**Set Workflow Details**
+### Workflow Details
 
 | Field | Description |
 |-------|-------------|
 | Workflow Name | A short name to identify this run |
 | Workflow Description | Optional notes about the run (e.g. date range or vehicle group) |
 
-**Define time range**
+### Time Range
 
 | Field | Description |
 |-------|-------------|
@@ -90,21 +67,22 @@ The configuration form opens with two sections at the top.
 
 All vehicle tracks and metrics are computed within this window.
 
-![Set Workflow Details and Define Time Range](data/screenshots/set_details_define_time.png)
+### Basemap Layers
 
----
+Two stacked ArcGIS tile layers form the background of every map. Pre-filled with sensible defaults, but the URL, opacity, and max zoom of each layer are editable.
 
-### Step 5 — Connect to EarthRanger, Transform Relocations to Trajectories, and Zoom to Envelope
+| Layer | Default Opacity | Max Zoom |
+|-------|------------------|----------|
+| ESRI World Hillshade | `1.0` | `15` |
+| ESRI World Street Map | `0.15` | `15` |
 
-Scroll down to configure the remaining three sections.
+### Connect to EarthRanger
 
-**Connect to EarthRanger**
+Select the EarthRanger connection configured above from the **Connect to EarthRanger** dropdown. The workflow will fetch all observations for the **Vehicles** subject group from this instance.
 
-Select the EarthRanger connection configured in Step 2 from the **Connect to EarthRanger** dropdown. The workflow will fetch all observations for the **Vehicles** subject group from this instance.
+### Trajectory Filter
 
-**Transform relocations to trajectories** *(Advanced Configurations)*
-
-These parameters control how raw GPS fixes are converted into trajectory segments. Expand **Advanced Configurations** to adjust the trajectory segment filters:
+Expand **Advanced Configurations** under **Transform relocations to trajectories** to adjust the segment filters. These parameters control how raw GPS fixes are converted into trajectory segments.
 
 | Field | Default | Description |
 |-------|---------|-------------|
@@ -115,22 +93,20 @@ These parameters control how raw GPS fixes are converted into trajectory segment
 | Minimum Segment Speed (km/h) | `3` | Discard segments below this average speed |
 | Maximum Segment Speed (km/h) | `150` | Discard segments above this average speed |
 
-**Zoom to envelope**
+### Zoom to Envelope
 
 | Field | Default | Description |
 |-------|---------|-------------|
-| Expansion Factor | `1.05` | Factor to expand the bounding box when auto-zooming maps (e.g. 1.2 = 20% larger) |
-
-![Data Source, Transform Relocations, and Zoom to Envelope](data/screenshots/data_source_relocs_zoom.png)
+| Expansion Factor | `1.05` | Factor to expand the bounding box when auto-zooming maps (e.g. `1.2` = 20% larger) |
 
 ---
 
-## Running the Workflow
+## 3. Run the Workflow
 
 Once all parameters are configured, click **Submit**. The runner will:
 
 1. Pull vehicle GPS observations from EarthRanger for the specified time range.
-2. Download the static boundary files (group ranches, conflict hotspots).
+2. Fetch the Conservancies and Group Ranch Boundaries spatial features from EarthRanger to build the study-area map layers.
 3. Convert observations to relocations, then build trajectory segments with speed and distance metrics.
 4. Classify speed into 6 equal-interval bins and generate the Speed Map.
 5. Render the Vehicle Tracks map using a uniform blue path layer.
@@ -139,9 +115,7 @@ Once all parameters are configured, click **Submit**. The runner will:
 8. Assemble the Word report (cover page + per-vehicle sections) and the dashboard.
 9. Save all outputs to the directory specified by `ECOSCOPE_WORKFLOWS_RESULTS`.
 
----
-
-## Output Files
+### Output Files
 
 All outputs are written to `$ECOSCOPE_WORKFLOWS_RESULTS/`:
 
@@ -152,10 +126,29 @@ All outputs are written to `$ECOSCOPE_WORKFLOWS_RESULTS/`:
 | `<vehicle>_speedmap.html` | Interactive speed map per vehicle |
 | `<vehicle>_tracks.html` | Interactive tracks map per vehicle |
 | `<vehicle>_speed_line_chart.html` | Interactive speed-over-time line chart |
-| `<vehicle>_speedmap.png` | Screenshot of speed map (2× resolution) |
-| `<vehicle>_tracks.png` | Screenshot of tracks map (2× resolution) |
-| `<vehicle>_speed_line_chart.png` | Screenshot of speed line chart (2× resolution) |
-| `<vehicle>_summary.csv` | Speed and distance summary table with totals row |
-| `lg_cover_page.docx` | Rendered report cover page |
+| `<vehicle>_speedmap.png` | Screenshot of speed map (2&times; resolution) |
+| `<vehicle>_tracks.png` | Screenshot of tracks map (2&times; resolution) |
+| `<vehicle>_speed_line_chart.png` | Screenshot of speed line chart (2&times; resolution) |
+| `<vehicle>_summary.csv` | Speed and distance summary table (one row per vehicle) |
+| `cover_page.docx` | Rendered report cover page |
 | `<vehicle>.docx` | Per-vehicle report section |
-| Merged report `.docx` | Final combined Word report |
+| `overall_report.docx` | Final combined Word report |
+
+---
+
+## More Help
+
+- **Technical Guide:** [technical_guide/lg_vehicles_report_technical_guide.pdf](technical_guide/lg_vehicles_report_technical_guide.pdf) &mdash; pipeline internals and task-by-task reference
+- **Issues:** [github.com/wildlife-dynamics/lg-vehicles-report/issues](https://github.com/wildlife-dynamics/lg-vehicles-report/issues)
+
+## Development
+
+This workflow's code (`ecoscope-workflows-vehicles-report-workflow/`) is generated from [`spec.yaml`](spec.yaml) and [`test-cases.yaml`](test-cases.yaml). After editing either file, recompile and commit the generated changes:
+
+```
+pixi run --manifest-path pixi.toml --locked bash -c "./dev/recompile.sh --update"
+```
+
+## License
+
+[BSD 3-Clause](LICENSE)
