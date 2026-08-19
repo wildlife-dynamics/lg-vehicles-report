@@ -413,11 +413,14 @@ workflow:
       argnames: text 
       argvalues: ${{ workflow.draw_speedmap.return }}
     
-  - name: Create speedmap widgets 
-    id: create_speedmap_widgets 
-    task: create_map_widget_single_view 
-    partial: 
-      title: Speed Map 
+  - name: Create speedmap widgets
+    id: create_speedmap_widgets
+    task: create_map_widget_single_view
+    skipif:
+      conditions:
+        - never
+    partial:
+      title: Speed Map
     map: 
       argnames: 
         - view 
@@ -506,10 +509,13 @@ workflow:
       argnames: text
       argvalues: ${{ workflow.draw_track_map.return }}
 
-  - name: Create tracks widgets 
-    id: create_tracks_widgets 
-    task: create_map_widget_single_view 
-    partial: 
+  - name: Create tracks widgets
+    id: create_tracks_widgets
+    task: create_map_widget_single_view
+    skipif:
+      conditions:
+        - never
+    partial:
       title:  Vehicle Tracks
     map: 
       argnames: 
