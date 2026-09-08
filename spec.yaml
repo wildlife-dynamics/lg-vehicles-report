@@ -39,12 +39,12 @@ task-instance-defaults:
 
 workflow:
   #Set workflow details
-  - name: Set Workflow Details
+  - name: Workflow Details
     id: workflow_details
     task: set_workflow_details
 
   #Timerange and timezone
-  - name: Define time range
+  - name: Time Range 
     id: time_range
     task: set_time_range
 
