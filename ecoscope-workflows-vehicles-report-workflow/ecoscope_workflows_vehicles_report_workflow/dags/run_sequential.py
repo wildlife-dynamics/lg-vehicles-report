@@ -32,6 +32,7 @@ from ecoscope.platform.tasks.preprocessing import (
 from ecoscope.platform.tasks.results import (
     create_map_widget_single_view as create_map_widget_single_view,
 )
+from ecoscope.platform.tasks.results import create_path_layer as create_path_layer
 from ecoscope.platform.tasks.results import (
     create_plot_widget_single_view as create_plot_widget_single_view,
 )
@@ -39,8 +40,10 @@ from ecoscope.platform.tasks.results import (
     create_single_value_widget_single_view as create_single_value_widget_single_view,
 )
 from ecoscope.platform.tasks.results import draw_line_chart as draw_line_chart
+from ecoscope.platform.tasks.results import draw_map as draw_map
 from ecoscope.platform.tasks.results import gather_dashboard as gather_dashboard
 from ecoscope.platform.tasks.results import merge_widget_views as merge_widget_views
+from ecoscope.platform.tasks.results import set_base_maps as set_base_maps
 from ecoscope.platform.tasks.skip import (
     any_dependency_skipped as any_dependency_skipped,
 )
@@ -65,13 +68,6 @@ from ecoscope.platform.tasks.transformation import (
 )
 from ecoscope.platform.tasks.transformation import sort_values as sort_values
 from ecoscope_workflows_ext_custom.tasks.io import html_to_png as html_to_png
-from ecoscope_workflows_ext_custom.tasks.results import (
-    create_path_layer as create_path_layer_1,
-)
-from ecoscope_workflows_ext_custom.tasks.results import draw_map as draw_map_1
-from ecoscope_workflows_ext_custom.tasks.results import (
-    set_base_maps_pydeck as set_base_maps_pydeck,
-)
 from ecoscope_workflows_ext_lion_guardians.tasks.reporting import (
     create_vehicles_context as create_vehicles_context,
 )
@@ -91,7 +87,7 @@ from ecoscope_workflows_ext_ste.tasks.reporting import (
     prepare_cover_metadata as prepare_cover_metadata,
 )
 from ecoscope_workflows_ext_ste.tasks.results import (
-    create_spatial_features_layer as create_spatial_features_layer,
+    create_spatial_features_layer as create_spatial_features_layer_1,
 )
 from ecoscope_workflows_ext_ste.tasks.spatial_operations import (
     combine_deckgl_map_layers as combine_deckgl_map_layers,
@@ -103,7 +99,7 @@ from ecoscope_workflows_ext_ste.tasks.spatial_operations import (
     envelope_gdf as envelope_gdf,
 )
 from ecoscope_workflows_ext_ste.tasks.spatial_operations import (
-    get_spatial_features as get_spatial_features,
+    get_spatial_features as get_spatial_features_1,
 )
 from ecoscope_workflows_ext_ste.tasks.transformation import (
     round_off_values as round_off_values,
@@ -209,7 +205,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
     )
 
     base_map_defs = (
-        task(set_base_maps_pydeck)
+        task(set_base_maps)
         .validate()
         .set_task_instance_id("base_map_defs")
         .handle_errors()
@@ -240,7 +236,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
     )
 
     select_geo_er = (
-        task(get_spatial_features)
+        task(get_spatial_features_1)
         .validate()
         .set_task_instance_id("select_geo_er")
         .handle_errors()
@@ -295,7 +291,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
     )
 
     spatial_features_layer = (
-        task(create_spatial_features_layer)
+        task(create_spatial_features_layer_1)
         .validate()
         .set_task_instance_id("spatial_features_layer")
         .handle_errors()
@@ -334,6 +330,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
             raise_on_empty=False,
             include_details=False,
             include_subjectsource_details=False,
+            include_subject_additional=False,
             **(params.get("subject_obs") or {}),
         )
         .call()
@@ -534,6 +531,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
             raise_if_not_found=True,
             drop_columns=[],
             retain_columns=[],
+            duplicate_strategy="suffix",
             rename_columns={
                 "extra__name": "subject_name",
                 "extra__sex": "subject_sex",
@@ -687,7 +685,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
     )
 
     generate_speedmap_layers = (
-        task(create_path_layer_1)
+        task(create_path_layer)
         .validate()
         .set_task_instance_id("generate_speedmap_layers")
         .handle_errors()
@@ -701,6 +699,11 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
         )
         .partial(
             data_url=None,
+            tooltip_columns=[
+                "speed_kmhr",
+                "speed_bins_formatted",
+                "speed_bins_colormap",
+            ],
             layer_style={
                 "get_color": "speed_bins_colormap",
                 "get_width": 2.25,
@@ -803,7 +806,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
     )
 
     draw_speedmap = (
-        task(draw_map_1)
+        task(draw_map)
         .validate()
         .set_task_instance_id("draw_speedmap")
         .handle_errors()
@@ -820,6 +823,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
             static=False,
             title=None,
             max_zoom=10,
+            output_type="html",
             legend_style={"placement": "bottom-right"},
             **(params.get("draw_speedmap") or {}),
         )
@@ -886,7 +890,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
     )
 
     generate_track_layers = (
-        task(create_path_layer_1)
+        task(create_path_layer)
         .validate()
         .set_task_instance_id("generate_track_layers")
         .handle_errors()
@@ -900,6 +904,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
         )
         .partial(
             data_url=None,
+            tooltip_columns=None,
             layer_style={
                 "get_color": [0, 0, 255],
                 "get_width": 2.25,
@@ -963,7 +968,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
     )
 
     draw_track_map = (
-        task(draw_map_1)
+        task(draw_map)
         .validate()
         .set_task_instance_id("draw_track_map")
         .handle_errors()
@@ -977,6 +982,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
         )
         .partial(
             tile_layers=base_map_defs,
+            output_type="html",
             static=False,
             title=None,
             max_zoom=15,
