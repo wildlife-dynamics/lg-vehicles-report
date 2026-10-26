@@ -5,15 +5,15 @@ requirements:
     channel: https://repo.prefix.dev/ecoscope-workflows/
 
   - name: ecoscope-workflows-ext-custom
-    version: "0.1.4.*"
+    version: "0.1.4"
     channel: https://repo.prefix.dev/ecoscope-workflows-custom/
 
   - name: ecoscope-workflows-ext-ste
-    version: "0.0.24.*"
+    version: "0.0.27"
     channel: https://repo.prefix.dev/ecoscope-workflows-custom/
 
   - name: ecoscope-workflows-ext-lion-guardians
-    version: "0.0.8.*"
+    version: "0.0.9"
     channel: https://repo.prefix.dev/ecoscope-workflows-custom/
     
   - name: pydeck
@@ -844,26 +844,18 @@ workflow:
       argvalues: ${{ workflow.persist_vehicle_chart.return }}
 
   # Download cover template
-  - name: Download cover page template
+  - name: Load packaged cover page template
     id: download_cover_page
-    task: fetch_and_persist_file
+    task: ecoscope_workflows_ext_lion_guardians.tasks.io.load_lion_guardians_file
     partial:
-      url: https://www.dropbox.com/scl/fi/huzg95h8p04a1wtgi9nbv/vehicles_cover_page.docx?rlkey=g3a7vi3ncesffww6mfafc9npn&st=jtn3m5jk&dl=0
-      output_path: ${{ env.ECOSCOPE_WORKFLOWS_RESULTS }}
-      overwrite_existing: false
-      unzip: false
-      retries: 2
+      filename: vehicles_cover_page.docx
 
   # Download section templates
-  - name: Download section templates
+  - name: Load packaged section templates
     id: download_sect_templates
-    task: fetch_and_persist_file
+    task: ecoscope_workflows_ext_lion_guardians.tasks.io.load_lion_guardians_file
     partial:
-      url: https://www.dropbox.com/scl/fi/hk5gh4kd6uf2cl68dcaac/custom_vehicle_template.docx?rlkey=a2ior7pcmgcb3e8a1d7qchodb&st=wh94dfph&dl=0
-      output_path: ${{ env.ECOSCOPE_WORKFLOWS_RESULTS }}
-      overwrite_existing: false
-      unzip: false
-      retries: 2
+      filename: custom_vehicle_template.docx
 
   - name: Unique subjects on trajs 
     id: unique_subjects
@@ -872,15 +864,11 @@ workflow:
       df: ${{ workflow.traj_add_temporal_index.return }}
       column_name: groupby_col
 
-  - name: Download org log path
+  - name: Load packaged org log path
     id: persist_logo
-    task: ecoscope_workflows_ext_ste.tasks.io.fetch_and_persist_file
+    task: ecoscope_workflows_ext_lion_guardians.tasks.io.load_lion_guardians_file
     partial:
-      url: https://www.dropbox.com/scl/fi/8oohb6i0kcj0q3qsud9l4/lion-guardians.png?rlkey=4kdqytux2qyftb5sgnaigyuyz&st=os6i6j6h&dl=0
-      output_path: ${{ env.ECOSCOPE_WORKFLOWS_RESULTS }}
-      overwrite_existing: false
-      retries: 3
-      unzip: false
+      filename: lion-guardians.png
 
   - name: Create cover template context 
     id: create_cover_tpl_context
@@ -960,6 +948,13 @@ workflow:
       filename: overall_report.docx
       order_by: name
       
+  - name: Report files
+    id: report_files
+    task: create_files_single_view
+    partial:
+      files:
+        - ${{ workflow.merge_collared_docs.return }}
+
   - name: Vehicles dashboard 
     id: vehicles_dashboard 
     task: gather_dashboard
@@ -977,3 +972,4 @@ workflow:
         
       time_range: ${{ workflow.time_range.return }}
       groupers: ${{ workflow.groupers.return }}
+      files: ${{ workflow.report_files.return }}
