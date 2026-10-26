@@ -30,6 +30,9 @@ from ecoscope.platform.tasks.preprocessing import (
     relocations_to_trajectory as relocations_to_trajectory,
 )
 from ecoscope.platform.tasks.results import (
+    create_files_single_view as create_files_single_view,
+)
+from ecoscope.platform.tasks.results import (
     create_map_widget_single_view as create_map_widget_single_view,
 )
 from ecoscope.platform.tasks.results import create_path_layer as create_path_layer
@@ -68,14 +71,14 @@ from ecoscope.platform.tasks.transformation import (
 )
 from ecoscope.platform.tasks.transformation import sort_values as sort_values
 from ecoscope_workflows_ext_custom.tasks.io import html_to_png as html_to_png
+from ecoscope_workflows_ext_lion_guardians.tasks.io import (
+    load_lion_guardians_file as load_lion_guardians_file,
+)
 from ecoscope_workflows_ext_lion_guardians.tasks.reporting import (
     create_vehicles_context as create_vehicles_context,
 )
 from ecoscope_workflows_ext_lion_guardians.tasks.reporting import (
     render_docx_page as render_docx_page,
-)
-from ecoscope_workflows_ext_ste.tasks.io import (
-    fetch_and_persist_file as fetch_and_persist_file,
 )
 from ecoscope_workflows_ext_ste.tasks.reporting import (
     create_context_page as create_context_page,
@@ -1601,7 +1604,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
     )
 
     download_cover_page = (
-        task(fetch_and_persist_file)
+        task(load_lion_guardians_file)
         .validate()
         .set_task_instance_id("download_cover_page")
         .handle_errors()
@@ -1614,18 +1617,14 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
             unpack_depth=1,
         )
         .partial(
-            url="https://www.dropbox.com/scl/fi/huzg95h8p04a1wtgi9nbv/vehicles_cover_page.docx?rlkey=g3a7vi3ncesffww6mfafc9npn&st=jtn3m5jk&dl=0",
-            output_path=os.environ["ECOSCOPE_WORKFLOWS_RESULTS"],
-            overwrite_existing=False,
-            unzip=False,
-            retries=2,
+            filename="vehicles_cover_page.docx",
             **(params.get("download_cover_page") or {}),
         )
         .call()
     )
 
     download_sect_templates = (
-        task(fetch_and_persist_file)
+        task(load_lion_guardians_file)
         .validate()
         .set_task_instance_id("download_sect_templates")
         .handle_errors()
@@ -1638,11 +1637,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
             unpack_depth=1,
         )
         .partial(
-            url="https://www.dropbox.com/scl/fi/hk5gh4kd6uf2cl68dcaac/custom_vehicle_template.docx?rlkey=a2ior7pcmgcb3e8a1d7qchodb&st=wh94dfph&dl=0",
-            output_path=os.environ["ECOSCOPE_WORKFLOWS_RESULTS"],
-            overwrite_existing=False,
-            unzip=False,
-            retries=2,
+            filename="custom_vehicle_template.docx",
             **(params.get("download_sect_templates") or {}),
         )
         .call()
@@ -1670,7 +1665,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
     )
 
     persist_logo = (
-        task(fetch_and_persist_file)
+        task(load_lion_guardians_file)
         .validate()
         .set_task_instance_id("persist_logo")
         .handle_errors()
@@ -1682,14 +1677,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
             ],
             unpack_depth=1,
         )
-        .partial(
-            url="https://www.dropbox.com/scl/fi/8oohb6i0kcj0q3qsud9l4/lion-guardians.png?rlkey=4kdqytux2qyftb5sgnaigyuyz&st=os6i6j6h&dl=0",
-            output_path=os.environ["ECOSCOPE_WORKFLOWS_RESULTS"],
-            overwrite_existing=False,
-            retries=3,
-            unzip=False,
-            **(params.get("persist_logo") or {}),
-        )
+        .partial(filename="lion-guardians.png", **(params.get("persist_logo") or {}))
         .call()
     )
 
@@ -1833,6 +1821,23 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
         .call()
     )
 
+    report_files = (
+        task(create_files_single_view)
+        .validate()
+        .set_task_instance_id("report_files")
+        .handle_errors()
+        .with_tracing()
+        .skipif(
+            conditions=[
+                any_is_empty_df,
+                any_dependency_skipped,
+            ],
+            unpack_depth=1,
+        )
+        .partial(files=[merge_collared_docs], **(params.get("report_files") or {}))
+        .call()
+    )
+
     vehicles_dashboard = (
         task(gather_dashboard)
         .validate()
@@ -1859,6 +1864,7 @@ def main(params: dict[str, Any], validate_params_schema: bool = True):
             ],
             time_range=time_range,
             groupers=groupers,
+            files=report_files,
             **(params.get("vehicles_dashboard") or {}),
         )
         .call()
