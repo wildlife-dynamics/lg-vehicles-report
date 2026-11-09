@@ -5,12 +5,12 @@
 
 ```yaml
 # fingerprint:
-artifacts_sha256_basic: 7a0580473c9e8860415ea78f854b61e038ccf58407ec067d169dbc0ccf2f8bd6
-artifacts_sha256_strict: 341e9971214ab11234fcd356474893eefd58d1e186301f4886673a3cfe7d4a43
+artifacts_sha256_basic: 79b58bab75e927c829f2ef640852a47598403a639320619d577105f71528943f
+artifacts_sha256_strict: d1fd181cfc91b0c4c5c7bd32040f369d37d53bba8aa6de118a89579846daeec0
 installed_requirements:
 - channel: https://repo.prefix.dev/ecoscope-workflows/
   name: ecoscope-platform
-  version: {version: ==2.26.0}
+  version: {version: ==2.28.0}
 - channel: https://repo.prefix.dev/ecoscope-workflows-custom/
   name: ecoscope-workflows-ext-custom
   version: {version: ==0.1.4}
@@ -25,9 +25,9 @@ installed_requirements:
   version: {version: ==0.9.2}
 - channel: conda-forge
   name: opentelemetry-sdk
-  version: {version: ==1.45.1}
-params_sha256: 8ec66f689124f09fdc0b9e58fd0668d6d6a9a023df19834cdf059202d17289b4
-spec_sha256: a7dac1f82433f0a490e0eeeed857fd292475cc67b2ce253fc1c18adbd71a4863
+  version: {version: ==1.45.2}
+params_sha256: f6786547988bc76da2ae0963fcb3be24c23f3a531b0be60e60e823ae87500854
+spec_sha256: 7febca8a2045b02df69bf7212997ba0fd9aab0f18230e3e2cfa7a8e3ca0e1447
 
 ```
 
